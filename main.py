@@ -9,21 +9,23 @@ def main():
 
         # Print waiting list
         print("\nWaiting List:")
-        for i, p in enumerate(game.waiting_list):
-            print(f"{i}: {p}")
+        if game.waiting_list:
+            for i, p in enumerate(game.waiting_list):
+                print(f"{i}: {p}")
+        else:
+            print("(empty)")
 
         # Print bays
         print("\nBays:")
         for i, p in enumerate(game.bays.get_patients()):
             print(f"Bay {i}: {p}")
 
-        # Critical check
-        critical = game.check_for_critical()
-        if critical:
-            print("\n⚠️ CRITICAL PATIENTS! Game Over.")
-            for c in critical:
+        # Code status check
+        codes = game.coded_patients()
+        if codes:
+            print("\n🚨 CODE BLUE patients:")
+            for c in codes:
                 print(c)
-            break
 
         # Player action
         print("\nActions:")
@@ -34,7 +36,13 @@ def main():
         choice = input("Choose: ")
 
         if choice == "1":
+            if not game.waiting_list:
+                print("No patients in waiting list.")
+                continue
             idx_w = int(input("Waiting index: "))
+            if idx_w < 0 or idx_w >= len(game.waiting_list):
+                print("Invalid waiting list index.")
+                continue
             idx_b = int(input("Bay index: "))
             p = game.waiting_list.pop(idx_w)
             if not game.bays.assign_patient(p, idx_b):
@@ -43,8 +51,10 @@ def main():
 
         elif choice == "2":
             idx_b = int(input("Bay index: "))
-            tx = input("Treatment name (fluids/antibiotics/defibrillation): ")
-            game.apply_treatment(idx_b, tx)
+            tx = input("Treatment name (fluids/antibiotics/transfusion/cpr/defibrillation): ")
+            result = game.apply_treatment(idx_b, tx)
+            if result:
+                print(result)
 
         elif choice == "3":
             continue
