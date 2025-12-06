@@ -37,10 +37,8 @@ class Patient:
         if self.has_active_affliction():
             self.vitals.apply_affliction(self.affliction_matrix)
         else:
-            previous_health = self.vitals.health_value()
             self.vitals.natural_recovery()
-            if self.vitals.health_value() > previous_health:
-                self.vitals.recover_vitals_toward_baseline()
+            self.vitals.recover_vitals_toward_baseline()
         self.check_code_status()
 
     def treat(self, treatment_matrix):
@@ -60,11 +58,10 @@ class Patient:
             return f"Unknown treatment '{name}'."
         if not self.treat(matrix):
             return "Patient is deceased. Treatment ineffective."
-        cured_message = self._maybe_resolve_affliction(name)
+        self._maybe_resolve_affliction(name)
         if not self.has_active_affliction():
             self.vitals.jitter_around_baseline()
-        base_message = f"{name.title()} administered to {self.name}."
-        return f"{base_message} {cured_message}".strip() if cured_message else base_message
+        return None
 
     def is_critical(self):
         return self.vitals.is_critical()
@@ -140,14 +137,14 @@ class Patient:
 
     def _maybe_resolve_affliction(self, treatment_name):
         if not self.affliction_name:
-            return ""
+            return False
         expected = AFFLICTION_CURES.get(self.affliction_name)
         if expected != treatment_name:
-            return ""
+            return False
         resolved = self.affliction_name
         self.affliction_matrix = np.zeros_like(self.affliction_matrix)
         self.affliction_name = None
-        return f"{resolved.title()} resolved."
+        return True
 
     def __str__(self):
         status = f"Patient {self.id}: {self.name}"

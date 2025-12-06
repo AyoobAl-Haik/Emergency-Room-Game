@@ -22,7 +22,7 @@ class Vitals:
     def __init__(self, matrix=None):
         self.deceased = False
         self.matrix = self._coerce_matrix(matrix)
-        self.baseline = np.copy(self.matrix)
+        self.baseline = np.array(self.DEFAULT_BASELINE, copy=True)
 
     # Label grid corresponds to the vitals matrix positions. Health row is hidden.
     _LABELS = [

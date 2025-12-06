@@ -41,7 +41,7 @@ class GameManager:
         if treatment_name is None:
             return "No treatment specified."
         response = patient.apply_intervention(treatment_name.strip().lower())
-        return response or "Treatment completed."
+        return response
 
     def send_to_morgue(self, bay_index):
         if self.game_over:
