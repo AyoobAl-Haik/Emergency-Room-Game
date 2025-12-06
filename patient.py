@@ -34,7 +34,7 @@ class Patient:
         """Apply affliction each turn."""
         if self.deceased:
             return
-        if self._has_active_affliction():
+        if self.has_active_affliction():
             self.vitals.apply_affliction(self.affliction_matrix)
         else:
             previous_health = self.vitals.health_value()
@@ -61,7 +61,7 @@ class Patient:
         if not self.treat(matrix):
             return "Patient is deceased. Treatment ineffective."
         cured_message = self._maybe_resolve_affliction(name)
-        if not self._has_active_affliction():
+        if not self.has_active_affliction():
             self.vitals.jitter_around_baseline()
         base_message = f"{name.title()} administered to {self.name}."
         return f"{base_message} {cured_message}".strip() if cured_message else base_message
@@ -128,8 +128,15 @@ class Patient:
             return "Defibrillation successful!"
         return "Defibrillation delivered but patient is still coding."
 
-    def _has_active_affliction(self):
+    def has_active_affliction(self):
         return not np.allclose(self.affliction_matrix, 0)
+
+    def is_ready_for_discharge(self):
+        return (
+            not self.deceased
+            and not self.coded
+            and not self.has_active_affliction()
+        )
 
     def _maybe_resolve_affliction(self, treatment_name):
         if not self.affliction_name:

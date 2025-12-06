@@ -27,11 +27,17 @@ def main():
             for c in codes:
                 print(c)
 
+        if game.game_over:
+            print(f"\nGame Over: {game.lose_reason}")
+            break
+
         # Player action
         print("\nActions:")
         print("1. Move patient from waiting list to bay")
         print("2. Apply treatment to bay patient")
-        print("3. End turn")
+        print("3. Send deceased bay patient to morgue")
+        print("4. Discharge treated bay patient")
+        print("5. End turn")
 
         choice = input("Choose: ")
 
@@ -57,7 +63,23 @@ def main():
                 print(result)
 
         elif choice == "3":
+            idx_b = int(input("Bay index: "))
+            result = game.send_to_morgue(idx_b)
+            if result:
+                print(result)
+
+        elif choice == "4":
+            idx_b = int(input("Bay index: "))
+            result = game.discharge_patient(idx_b)
+            if result:
+                print(result)
+
+        elif choice == "5":
             continue
+
+        if game.game_over:
+            print(f"\nGame Over: {game.lose_reason}")
+            break
 
 if __name__ == "__main__":
     main()
