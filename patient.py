@@ -61,6 +61,8 @@ class Patient:
         if not self.treat(matrix):
             return "Patient is deceased. Treatment ineffective."
         cured_message = self._maybe_resolve_affliction(name)
+        if not self._has_active_affliction():
+            self.vitals.jitter_around_baseline()
         base_message = f"{name.title()} administered to {self.name}."
         return f"{base_message} {cured_message}".strip() if cured_message else base_message
 

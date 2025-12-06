@@ -7,6 +7,17 @@ class Vitals:
     MAX_HEALTH = 120
     BASE_HEALTH = 100
     NATURAL_RECOVERY_STEP = 4
+    DEFAULT_BASELINE = np.array([
+        [120, 80, 98],
+        [78, 37.0, 16],
+        [90, 4.5, 1],
+        [BASE_HEALTH, 0, 0]
+    ], dtype=float)
+    _JITTER_SCALE = np.array([
+        [5, 3, 1],
+        [4, 0.3, 2],
+        [5, 0.5, 2]
+    ], dtype=float)
 
     def __init__(self, matrix=None):
         self.deceased = False
@@ -29,9 +40,8 @@ class Vitals:
     ], dtype=float)
 
     def _coerce_matrix(self, matrix):
-        base = np.zeros(self.MATRIX_SHAPE, dtype=float)
+        base = np.array(self.DEFAULT_BASELINE, copy=True)
         if matrix is None:
-            base[self._HEALTH_INDEX] = self.BASE_HEALTH
             return base
         incoming = np.array(matrix, dtype=float)
         rows = min(incoming.shape[0], self.MATRIX_SHAPE[0])
@@ -83,6 +93,14 @@ class Vitals:
         diff = self.baseline[:3, :3] - self.matrix[:3, :3]
         adjustments = np.clip(diff, -step, step)
         self.matrix[:3, :3] = self.matrix[:3, :3] + adjustments
+        self._clamp_vitals()
+
+    def jitter_around_baseline(self):
+        if self.deceased:
+            return
+        noise = np.random.uniform(-1.0, 1.0, size=(3, 3)) * self._JITTER_SCALE
+        targets = self.baseline[:3, :3] + noise
+        self.matrix[:3, :3] = 0.5 * (self.matrix[:3, :3] + targets)
         self._clamp_vitals()
 
     def is_critical(self, threshold=-10):
