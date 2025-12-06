@@ -11,6 +11,7 @@ class Vitals:
     def __init__(self, matrix=None):
         self.deceased = False
         self.matrix = self._coerce_matrix(matrix)
+        self.baseline = np.copy(self.matrix)
 
     # Label grid corresponds to the vitals matrix positions. Health row is hidden.
     _LABELS = [
@@ -74,6 +75,15 @@ class Vitals:
         row, col = self._HEALTH_INDEX
         target = min(self.BASE_HEALTH, self.matrix[row, col] + amount)
         self.matrix[row, col] = min(self.MAX_HEALTH, target)
+        self._clamp_vitals()
+
+    def recover_vitals_toward_baseline(self, step=3):
+        if self.deceased:
+            return
+        diff = self.baseline[:3, :3] - self.matrix[:3, :3]
+        adjustments = np.clip(diff, -step, step)
+        self.matrix[:3, :3] = self.matrix[:3, :3] + adjustments
+        self._clamp_vitals()
 
     def is_critical(self, threshold=-10):
         return np.any(self.matrix[:3, :3] < threshold)

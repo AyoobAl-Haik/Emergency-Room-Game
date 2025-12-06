@@ -37,7 +37,10 @@ class Patient:
         if self._has_active_affliction():
             self.vitals.apply_affliction(self.affliction_matrix)
         else:
+            previous_health = self.vitals.health_value()
             self.vitals.natural_recovery()
+            if self.vitals.health_value() > previous_health:
+                self.vitals.recover_vitals_toward_baseline()
         self.check_code_status()
 
     def treat(self, treatment_matrix):
