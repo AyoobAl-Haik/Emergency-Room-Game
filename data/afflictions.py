@@ -31,3 +31,11 @@ AFFLICTIONS = {
         [-18, 0, 0]
     ], dtype=float)
 }
+
+AFFLICTION_CURES = {
+    "sepsis": "antibiotics",
+    "cardiac arrest": "defibrillation",
+    "dehydration": "fluids",
+    "external bleed": "hemostasis",
+    "internal bleed": "transfusion"
+}

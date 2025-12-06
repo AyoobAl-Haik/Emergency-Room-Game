@@ -1,15 +1,17 @@
 import numpy as np
 import random
 from vitals import Vitals
+from data.afflictions import AFFLICTION_CURES
 from data.treatments import TREATMENTS
 
 CPR_MATRIX = np.array([
-    [0, 0, 0],
-    [0, 0, 0],
-    [0, 0, 0],
-    [+5, 0, 0]
+    [+8, +6, +4],
+    [+4, 0, +2],
+    [+6, 0, 0],
+    [+15, 0, 0]
 ], dtype=float)
-CPR_SHOCKABLE_CHANCE = 0.45
+CPR_SHOCKABLE_CHANCE = 0.75
+CPR_FORCE_SHOCKABLE_ATTEMPTS = 2
 
 class Patient:
     _id_counter = 1
@@ -26,12 +28,16 @@ class Patient:
         self.deceased = False
         self.coding_reasons = []
         self.shockable = False
+        self.cpr_attempts = 0
 
     def worsen(self):
         """Apply affliction each turn."""
         if self.deceased:
             return
-        self.vitals.apply_affliction(self.affliction_matrix)
+        if self._has_active_affliction():
+            self.vitals.apply_affliction(self.affliction_matrix)
+        else:
+            self.vitals.natural_recovery()
         self.check_code_status()
 
     def treat(self, treatment_matrix):
@@ -51,7 +57,9 @@ class Patient:
             return f"Unknown treatment '{name}'."
         if not self.treat(matrix):
             return "Patient is deceased. Treatment ineffective."
-        return f"{name.title()} administered to {self.name}."
+        cured_message = self._maybe_resolve_affliction(name)
+        base_message = f"{name.title()} administered to {self.name}."
+        return f"{base_message} {cured_message}".strip() if cured_message else base_message
 
     def is_critical(self):
         return self.vitals.is_critical()
@@ -60,6 +68,7 @@ class Patient:
         if self.deceased:
             self.coded = True
             self.coding_reasons = ["Patient deceased"]
+            self.cpr_attempts = 0
             return True
 
         health_flags = self.vitals.coding_flags()
@@ -70,6 +79,7 @@ class Patient:
                 self.vitals.mark_deceased()
                 self.coded = True
                 self.coding_reasons = ["Health depleted"]
+                self.cpr_attempts = 0
                 return True
             self.coded = True
             self.coding_reasons = health_flags
@@ -78,6 +88,7 @@ class Patient:
         self.coded = False
         self.coding_reasons = []
         self.shockable = False
+        self.cpr_attempts = 0
         return False
 
     def perform_cpr(self):
@@ -85,9 +96,11 @@ class Patient:
             return "Patient is deceased. CPR cannot revive them."
         self.vitals.apply_treatment(CPR_MATRIX)
         made_shockable = False
-        if self.coded and not self.shockable and random.random() < CPR_SHOCKABLE_CHANCE:
-            self.shockable = True
-            made_shockable = True
+        if self.coded:
+            self.cpr_attempts += 1
+            if not self.shockable and (random.random() < CPR_SHOCKABLE_CHANCE or self.cpr_attempts >= CPR_FORCE_SHOCKABLE_ATTEMPTS):
+                self.shockable = True
+                made_shockable = True
         self.check_code_status()
         if made_shockable:
             return "CPR performed. Shockable rhythm achieved!"
@@ -104,10 +117,25 @@ class Patient:
             return "No shockable rhythm. Perform CPR first."
         self.vitals.apply_treatment(TREATMENTS["defibrillation"])
         self.shockable = False
+        self.cpr_attempts = 0
         self.check_code_status()
         if not self.coded:
             return "Defibrillation successful!"
         return "Defibrillation delivered but patient is still coding."
+
+    def _has_active_affliction(self):
+        return not np.allclose(self.affliction_matrix, 0)
+
+    def _maybe_resolve_affliction(self, treatment_name):
+        if not self.affliction_name:
+            return ""
+        expected = AFFLICTION_CURES.get(self.affliction_name)
+        if expected != treatment_name:
+            return ""
+        resolved = self.affliction_name
+        self.affliction_matrix = np.zeros_like(self.affliction_matrix)
+        self.affliction_name = None
+        return f"{resolved.title()} resolved."
 
     def __str__(self):
         status = f"Patient {self.id}: {self.name}"

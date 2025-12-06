@@ -51,7 +51,7 @@ def main():
 
         elif choice == "2":
             idx_b = int(input("Bay index: "))
-            tx = input("Treatment name (fluids/antibiotics/transfusion/cpr/defibrillation): ")
+            tx = input("Treatment name (fluids/antibiotics/transfusion/hemostasis/cpr/defibrillation): ")
             result = game.apply_treatment(idx_b, tx)
             if result:
                 print(result)
