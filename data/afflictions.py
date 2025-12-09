@@ -72,3 +72,30 @@ AFFLICTION_DAMAGE_RULES = {
         )
     }
 }
+
+AFFLICTION_ASSESSMENTS = {
+    "sepsis": {
+        "signs": "Hot flushed skin, mottled extremities, tachycardia, and dropping pressures.",
+        "symptoms": "Reports rigors, overwhelming fatigue, and diffuse body aches."
+    },
+    "cardiac arrest": {
+        "signs": "Unresponsive, cyanotic, pulseless with agonal or absent respirations.",
+        "symptoms": "Witnesses report sudden collapse with no preceding complaints."
+    },
+    "dehydration": {
+        "signs": "Dry mucosa, poor turgor, tachycardia, and narrow pulse pressure.",
+        "symptoms": "Complains of intense thirst, dizziness, and nausea."
+    },
+    "external bleed": {
+        "signs": "Active external hemorrhage, pale clammy skin, weak peripheral pulses.",
+        "symptoms": "Reports sharp localized pain at wound and fading vision."
+    },
+    "internal bleed": {
+        "signs": "Distended abdomen, cool extremities, and profound hypotension.",
+        "symptoms": "Complains of abdominal pressure, shortness of breath, and impending doom."
+    },
+    "default": {
+        "signs": "Calm appearance, skin warm and dry, vitals within expected range.",
+        "symptoms": "Denies acute complaints and is conversant."
+    }
+}

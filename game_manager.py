@@ -50,7 +50,7 @@ class GameManager:
         if error:
             return error
         if not patient.deceased:
-            reason = f"Lose condition: attempted to send living patient {patient.name} to the morgue."
+            reason = f"Lose condition: attempted to send living patient {patient.name} to the morgue. You make national news headlines and a medical board strips you of your license. Oops."
             self._lose(reason)
             return reason
         self.morgue.append(patient)
@@ -68,7 +68,7 @@ class GameManager:
             self._lose(reason)
             return reason
         if patient.has_active_affliction():
-            reason = f"Lose condition: discharged untreated patient {patient.name}."
+            reason = f"Lose condition: discharged untreated patient {patient.name}. Their family is outraged and sues the hospital. You lose."
             self._lose(reason)
             return reason
         self.discharged.append(patient)

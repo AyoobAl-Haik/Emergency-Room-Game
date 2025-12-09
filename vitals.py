@@ -141,7 +141,7 @@ class Vitals:
     def is_coding(self):
         return bool(self.coding_flags())
 
-    def __str__(self):
+    def format(self, show_pain=True):
         if self.deceased:
             return "Vitals unavailable (patient deceased)"
 
@@ -151,11 +151,18 @@ class Vitals:
                 for label, value in zip(row_labels, row_vals):
                     if label is None:
                         continue
-                    lines.append(f"{label}: {self._format_value(label, value)}")
+                    if label == "pain score" and not show_pain:
+                        display = "unavailable (patient unconscious)"
+                    else:
+                        display = self._format_value(label, value)
+                    lines.append(f"{label}: {display}")
             return "\n".join(lines)
 
         # Fallback to raw matrix representation if shape is unexpected.
         return str(self.matrix)
+
+    def __str__(self):
+        return self.format(show_pain=True)
 
     def _format_value(self, label, value):
         numeric = float(value)
