@@ -3,9 +3,14 @@ import numpy as np
 class Vitals:
     MATRIX_SHAPE = (4, 3)
     _HEALTH_INDEX = (3, 0)
+    _HEART_RATE_INDEX = (1, 0)
+    _TEMPERATURE_INDEX = (1, 1)
+    _PAIN_SCORE_INDEX = (2, 2)
     CODE_HEALTH_THRESHOLD = 30
     MAX_HEALTH = 120
     BASE_HEALTH = 100
+    HEART_RATE_MAX = 220
+    PAIN_MAX = 10
     NATURAL_RECOVERY_STEP = 4
     DEFAULT_BASELINE = np.array([
         [120, 80, 98],
@@ -39,6 +44,12 @@ class Vitals:
         [0, 0, 0]
     ], dtype=float)
 
+    _MEASUREMENT_KEYS = {
+        "heart_rate": _HEART_RATE_INDEX,
+        "temperature": _TEMPERATURE_INDEX,
+        "pain_score": _PAIN_SCORE_INDEX,
+    }
+
     def _coerce_matrix(self, matrix):
         base = np.array(self.DEFAULT_BASELINE, copy=True)
         if matrix is None:
@@ -58,6 +69,10 @@ class Vitals:
     def _clamp_vitals(self, target=None):
         matrix = target if target is not None else self.matrix
         np.maximum(matrix, self._MIN_VALUES, out=matrix)
+        hr_row, hr_col = self._HEART_RATE_INDEX
+        matrix[hr_row, hr_col] = min(matrix[hr_row, hr_col], self.HEART_RATE_MAX)
+        ps_row, ps_col = self._PAIN_SCORE_INDEX
+        matrix[ps_row, ps_col] = min(matrix[ps_row, ps_col], self.PAIN_MAX)
         self._clamp_health(matrix)
 
     def apply_affliction(self, affliction_matrix):
@@ -103,6 +118,13 @@ class Vitals:
         self.matrix[:3, :3] = 0.5 * (self.matrix[:3, :3] + targets)
         self._clamp_vitals()
 
+    def stabilize_near_baseline(self, jitter=2.5):
+        if self.deceased:
+            return
+        noise = np.random.uniform(-jitter, jitter, size=(3, 3))
+        self.matrix[:3, :3] = self.baseline[:3, :3] + noise
+        self._clamp_vitals()
+
     def is_critical(self, threshold=-10):
         return np.any(self.matrix[:3, :3] < threshold)
 
@@ -129,8 +151,31 @@ class Vitals:
                 for label, value in zip(row_labels, row_vals):
                     if label is None:
                         continue
-                    lines.append(f"{label}: {value}")
+                    lines.append(f"{label}: {self._format_value(label, value)}")
             return "\n".join(lines)
 
         # Fallback to raw matrix representation if shape is unexpected.
         return str(self.matrix)
+
+    def _format_value(self, label, value):
+        numeric = float(value)
+        if label == "pain score":
+            bounded = min(max(numeric, 0.0), self.PAIN_MAX)
+            return str(int(round(bounded)))
+        rounded = round(numeric, 1)
+        if rounded.is_integer():
+            return str(int(rounded))
+        return f"{rounded:.1f}"
+
+    def adjust_health(self, delta):
+        if self.deceased:
+            return
+        row, col = self._HEALTH_INDEX
+        self.matrix[row, col] = np.clip(self.matrix[row, col] + delta, 0, self.MAX_HEALTH)
+
+    def boost_health(self, amount):
+        self.adjust_health(amount)
+
+    def get_measurement(self, key):
+        row, col = self._MEASUREMENT_KEYS[key]
+        return float(self.matrix[row, col])

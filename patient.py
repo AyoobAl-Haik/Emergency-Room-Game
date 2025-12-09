@@ -1,7 +1,7 @@
 import numpy as np
 import random
 from vitals import Vitals
-from data.afflictions import AFFLICTION_CURES
+from data.afflictions import AFFLICTION_CURES, AFFLICTION_DAMAGE_RULES
 from data.treatments import TREATMENTS
 
 CPR_MATRIX = np.array([
@@ -12,6 +12,8 @@ CPR_MATRIX = np.array([
 ], dtype=float)
 CPR_SHOCKABLE_CHANCE = 0.75
 CPR_FORCE_SHOCKABLE_ATTEMPTS = 2
+DEFIB_HEALTH_BOOST = 20
+DEFIB_BASELINE_JITTER = 3.0
 
 class Patient:
     _id_counter = 1
@@ -36,6 +38,7 @@ class Patient:
             return
         if self.has_active_affliction():
             self.vitals.apply_affliction(self.affliction_matrix)
+            self._apply_affliction_health_damage()
         else:
             self.vitals.natural_recovery()
             self.vitals.recover_vitals_toward_baseline()
@@ -122,7 +125,10 @@ class Patient:
         self.cpr_attempts = 0
         self.check_code_status()
         if not self.coded:
-            return "Defibrillation successful!"
+            self.vitals.boost_health(DEFIB_HEALTH_BOOST)
+            self.vitals.stabilize_near_baseline(jitter=DEFIB_BASELINE_JITTER)
+            self.check_code_status()
+            return "Defibrillation successful! Patient stabilized, underlying cause persists."
         return "Defibrillation delivered but patient is still coding."
 
     def has_active_affliction(self):
@@ -145,6 +151,21 @@ class Patient:
         self.affliction_matrix = np.zeros_like(self.affliction_matrix)
         self.affliction_name = None
         return True
+
+    def _apply_affliction_health_damage(self):
+        if not self.affliction_name:
+            return False
+        rules = AFFLICTION_DAMAGE_RULES.get(self.affliction_name)
+        if not rules:
+            return False
+        for threshold in rules.get("thresholds", []):
+            measurement = self.vitals.get_measurement(threshold["vital"])
+            min_ok = threshold.get("min")
+            max_ok = threshold.get("max")
+            if (min_ok is not None and measurement < min_ok) or (max_ok is not None and measurement > max_ok):
+                self.vitals.adjust_health(-rules["health_loss"])
+                return True
+        return False
 
     def __str__(self):
         status = f"Patient {self.id}: {self.name}"
